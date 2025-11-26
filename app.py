@@ -288,7 +288,7 @@ if mode == "Registrar diseños y ensayos (F10-02/F10-03)":
             st.warning("BBDD vaciada en esta sesión.")
     with colB2:
         if len(st.session_state["bbdd"]) > 0:
-            df_to_csv_download(st.session_state["bbdd"], "F10_02_BD_ensayos.csv)
+            df_to_csv_download(st.session_state["bbdd"], "F10_02_BD_ensayos.csv")
 
 
 # =====================================================
