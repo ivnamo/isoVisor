@@ -117,7 +117,3 @@ def render_visor_page():
         use_container_width=True,
     )
 
-    st.info(
-        "El botón 4 genera un CSV solo para la solicitud seleccionada. "
-        "El botón 5 genera un XLSX con una hoja por cada Nº de solicitud."
-    )
