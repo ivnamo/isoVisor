@@ -1,7 +1,12 @@
 import streamlit as st
 import pandas as pd
 
-from models import BBDD_COLUMNS, build_informe_iso
+from models import (
+    BBDD_COLUMNS,
+    build_informe_iso,
+    build_informe_iso_excel_all,
+    build_ensayos_dict_from_df,
+)
 
 
 def render_visor_page():
@@ -63,43 +68,8 @@ def render_visor_page():
 
     # Agrupar ensayos para mostrar vertical + plegable
     st.markdown("### 2. Ensayos / formulaciones (F10-02 · 2)")
-    grupos = (
-        df_sel.groupby(
-            [
-                "ID ensayo",
-                "Nombre formulación",
-                "Fecha ensayo",
-                "Resultado",
-                "Motivo / comentario",
-            ],
-            dropna=False,
-        )
-        .agg({"Materia prima": list, "% peso": list})
-        .reset_index()
-    )
 
-    ensayos_dict = {}
-
-    for idx, row in grupos.iterrows():
-        id_e = str(row["ID ensayo"])
-        nombre_e = str(row["Nombre formulación"])
-        fecha_e = str(row["Fecha ensayo"])
-        resultado_e = str(row["Resultado"])
-        motivo_e = str(row["Motivo / comentario"])
-        materias = row["Materia prima"]
-        pct = row["% peso"]
-        mp_rows = []
-        for m, p in zip(materias, pct):
-            mp_rows.append({"Materia prima": m, "% peso": p})
-        key = f"{id_e}||{nombre_e}"
-        ensayos_dict[key] = {
-            "id": id_e,
-            "nombre": nombre_e,
-            "fecha": fecha_e,
-            "resultado": resultado_e,
-            "motivo": motivo_e,
-            "materias": mp_rows,
-        }
+    ensayos_dict = build_ensayos_dict_from_df(df_sel)
 
     if not ensayos_dict:
         st.info("No se han encontrado ensayos para esta solicitud.")
@@ -123,7 +93,7 @@ def render_visor_page():
         st.write(f"**Fórmula OK:** {meta_row.get('Fórmula OK', '')}")
         st.write(f"**Riquezas:** {meta_row.get('Riquezas', '')}")
 
-    # Botón para informe ISO tipo CSV
+    # Botón para informe ISO tipo CSV (solo esta solicitud)
     st.markdown("### 4. Exportar informe ISO (CSV) para este Nº de Solicitud")
 
     informe_bytes = build_informe_iso(meta_row, ensayos_dict)
@@ -135,7 +105,19 @@ def render_visor_page():
         use_container_width=True,
     )
 
+    # Botón para informe ISO XLSX con TODAS las solicitudes (una hoja por cada Nº)
+    st.markdown("### 5. Exportar informe ISO (XLSX) para TODAS las solicitudes")
+
+    xlsx_bytes = build_informe_iso_excel_all(df_bbdd)
+    st.download_button(
+        "📥 Descargar informe ISO (XLSX) · todas las solicitudes",
+        data=xlsx_bytes,
+        file_name="Informe_ISO_todas_solicitudes.xlsx",
+        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        use_container_width=True,
+    )
+
     st.info(
-        "Abre el CSV en Excel (separador ;). Desde ahí puedes guardar como XLSX, "
-        "ajustar bordes, fusionar celdas o añadir tu cabecera corporativa si el auditor lo pide."
+        "El botón 4 genera un CSV solo para la solicitud seleccionada. "
+        "El botón 5 genera un XLSX con una hoja por cada Nº de solicitud."
     )
