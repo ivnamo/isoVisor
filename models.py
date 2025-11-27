@@ -250,15 +250,24 @@ def build_informe_iso_excel_all(df_bbdd: pd.DataFrame) -> bytes:
     Cada hoja lleva el informe ISO (mismas secciones que el CSV por solicitud).
     Devuelve bytes del XLSX.
     """
-    # Por si acaso, asegurar columnas
+    # Asegurar columnas
     for c in BBDD_COLUMNS:
         if c not in df_bbdd.columns:
             df_bbdd[c] = ""
 
-    solicitudes = (
-        df_bbdd["Nº Solicitud"].fillna("(sin Nº)").unique().tolist()
-    )
-    solicitudes = sorted(solicitudes, key=lambda x: str(x))
+    df_bbdd = df_bbdd[BBDD_COLUMNS]
+
+    # Lista de solicitudes (pueden ser números o texto)
+    solicitudes = df_bbdd["Nº Solicitud"].fillna("(sin Nº)").unique().tolist()
+
+    # Orden "natural": primero numéricos por valor, luego textos
+    def natural_sort_key(x):
+        try:
+            return (0, float(x))
+        except Exception:
+            return (1, str(x))
+
+    solicitudes = sorted(solicitudes, key=natural_sort_key)
 
     output = io.BytesIO()
     used_sheet_names = set()
@@ -275,7 +284,7 @@ def build_informe_iso_excel_all(df_bbdd: pd.DataFrame) -> bytes:
             ensayos_dict = build_ensayos_dict_from_df(df_sel)
             rows = _build_informe_iso_rows(meta_row, ensayos_dict)
 
-            # convertir filas a DataFrame (rellenando con columnas hasta la máxima longitud)
+            # convertir filas a DataFrame (rellenando hasta el nº máximo de columnas)
             max_cols = max(len(r) for r in rows) if rows else 1
             normalized_rows = []
             for r in rows:
@@ -293,3 +302,4 @@ def build_informe_iso_excel_all(df_bbdd: pd.DataFrame) -> bytes:
 
     output.seek(0)
     return output.getvalue()
+
