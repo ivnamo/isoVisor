@@ -123,7 +123,7 @@ def _build_informe_iso_rows(meta: dict, ensayos: dict):
     """
     rows = []
 
-    rows.append(["Responsable de proyecto:", meta.get("Responsable", "")])
+    rows.append(["Responsable:", meta.get("Responsable", "")])
     rows.append(
         [
             "Nº Solicitud:",
