@@ -2,7 +2,7 @@ import streamlit as st
 import pandas as pd
 from datetime import date
 
-from models import BBDD_COLUMNS, parse_receta_text
+from models import BBDD_COLUMNS, parse_receta_text, normalize_columns
 from utils_streamlit import df_to_csv_download
 
 
@@ -20,14 +20,12 @@ def render_registro_page():
         if uploaded_bbdd is not None:
             if st.button("Cargar CSV en BBDD actual", use_container_width=True):
                 df_in = pd.read_csv(uploaded_bbdd, sep=None, engine="python")
-                # Asegurar columnas
+                df_in = normalize_columns(df_in)
                 missing = [c for c in BBDD_COLUMNS if c not in df_in.columns]
                 for c in missing:
                     df_in[c] = ""
                 st.session_state["bbdd"] = df_in[BBDD_COLUMNS]
-                st.success(
-                    f"BBDD cargada con {len(st.session_state['bbdd'])} filas."
-                )
+
     with col_info:
         st.markdown(
             "_Si no subes nada, se empieza con una BBDD vacía (en esta sesión)._"
