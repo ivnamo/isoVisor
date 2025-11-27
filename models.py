@@ -1,5 +1,6 @@
 from datetime import date
 import pandas as pd
+import io
 
 BBDD_COLUMNS = [
     "Responsable",
@@ -68,13 +69,57 @@ def parse_receta_text(text: str):
     return rows
 
 
-def build_informe_iso(meta: dict, ensayos: dict) -> bytes:
+def build_ensayos_dict_from_df(df_sel: pd.DataFrame) -> dict:
     """
-    Genera un CSV "maquetado" tipo informe ISO:
-    - 1. Datos de partida
-    - 2. Ensayos verticales con fórmulas
-    - 3. Verificación (producto final, fórmula OK, riquezas)
-    Devuelve bytes UTF-8 con BOM, listo para descargar.
+    A partir de un df filtrado por Nº de solicitud, agrupa ensayos:
+    - clave = ID ensayo + Nombre formulación
+    - materias / % en lista
+    """
+    grupos = (
+        df_sel.groupby(
+            [
+                "ID ensayo",
+                "Nombre formulación",
+                "Fecha ensayo",
+                "Resultado",
+                "Motivo / comentario",
+            ],
+            dropna=False,
+        )
+        .agg({"Materia prima": list, "% peso": list})
+        .reset_index()
+    )
+
+    ensayos_dict = {}
+
+    for _, row in grupos.iterrows():
+        id_e = str(row["ID ensayo"])
+        nombre_e = str(row["Nombre formulación"])
+        fecha_e = str(row["Fecha ensayo"])
+        resultado_e = str(row["Resultado"])
+        motivo_e = str(row["Motivo / comentario"])
+        materias = row["Materia prima"]
+        pct = row["% peso"]
+        mp_rows = []
+        for m, p in zip(materias, pct):
+            mp_rows.append({"Materia prima": m, "% peso": p})
+        key = f"{id_e}||{nombre_e}"
+        ensayos_dict[key] = {
+            "id": id_e,
+            "nombre": nombre_e,
+            "fecha": fecha_e,
+            "resultado": resultado_e,
+            "motivo": motivo_e,
+            "materias": mp_rows,
+        }
+
+    return ensayos_dict
+
+
+def _build_informe_iso_rows(meta: dict, ensayos: dict):
+    """
+    Devuelve la estructura del informe como lista de listas (filas / columnas),
+    sin convertir todavía a CSV o Excel.
     """
     rows = []
 
@@ -113,6 +158,19 @@ def build_informe_iso(meta: dict, ensayos: dict) -> bytes:
     rows.append(["Riquezas:", meta.get("Riquezas", "")])
     rows.append([])
 
+    return rows
+
+
+def build_informe_iso(meta: dict, ensayos: dict) -> bytes:
+    """
+    Genera un CSV "maquetado" tipo informe ISO:
+    - 1. Datos de partida
+    - 2. Ensayos verticales con fórmulas
+    - 3. Verificación (producto final, fórmula OK, riquezas)
+    Devuelve bytes UTF-8 con BOM, listo para descargar como CSV.
+    """
+    rows = _build_informe_iso_rows(meta, ensayos)
+
     # Convertir a CSV (texto) con ; y BOM
     out_lines = []
     for cols in rows:
@@ -129,3 +187,74 @@ def build_informe_iso(meta: dict, ensayos: dict) -> bytes:
     csv_content = "\r\n".join(out_lines)
     # BOM
     return ("\ufeff" + csv_content).encode("utf-8")
+
+
+def _sanitize_sheet_name(name: str, used: set) -> str:
+    """
+    Limpia el nombre de hoja para Excel (31 chars máx, sin caracteres raros) y
+    evita duplicados añadiendo sufijos.
+    """
+    invalid = '[]:*?/\\'
+    cleaned = "".join("_" if c in invalid else c for c in str(name))
+    if not cleaned:
+        cleaned = "Solicitud"
+    cleaned = cleaned[:31]
+    base = cleaned
+    i = 1
+    while cleaned in used:
+        suffix = f"_{i}"
+        cleaned = (base[: 31 - len(suffix)]) + suffix
+        i += 1
+    used.add(cleaned)
+    return cleaned
+
+
+def build_informe_iso_excel_all(df_bbdd: pd.DataFrame) -> bytes:
+    """
+    Genera un XLSX con una hoja por Nº de Solicitud.
+    Cada hoja lleva el informe ISO (mismas secciones que el CSV por solicitud).
+    Devuelve bytes del XLSX.
+    """
+    # Por si acaso, asegurar columnas
+    for c in BBDD_COLUMNS:
+        if c not in df_bbdd.columns:
+            df_bbdd[c] = ""
+
+    solicitudes = (
+        df_bbdd["Nº Solicitud"].fillna("(sin Nº)").unique().tolist()
+    )
+    solicitudes = sorted(solicitudes, key=lambda x: str(x))
+
+    output = io.BytesIO()
+    used_sheet_names = set()
+
+    with pd.ExcelWriter(output, engine="xlsxwriter") as writer:
+        for solicitud in solicitudes:
+            df_sel = df_bbdd[
+                df_bbdd["Nº Solicitud"].fillna("(sin Nº)") == solicitud
+            ].copy()
+            if df_sel.empty:
+                continue
+
+            meta_row = df_sel.iloc[0].to_dict()
+            ensayos_dict = build_ensayos_dict_from_df(df_sel)
+            rows = _build_informe_iso_rows(meta_row, ensayos_dict)
+
+            # convertir filas a DataFrame (rellenando con columnas hasta la máxima longitud)
+            max_cols = max(len(r) for r in rows) if rows else 1
+            normalized_rows = []
+            for r in rows:
+                r_extended = list(r) + [""] * (max_cols - len(r))
+                normalized_rows.append(r_extended)
+            df_sheet = pd.DataFrame(normalized_rows)
+
+            sheet_name = _sanitize_sheet_name(solicitud, used_sheet_names)
+            df_sheet.to_excel(
+                writer,
+                sheet_name=sheet_name,
+                index=False,
+                header=False,
+            )
+
+    output.seek(0)
+    return output.getvalue()
