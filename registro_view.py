@@ -38,7 +38,7 @@ def render_registro_page():
 
     col1, col2 = st.columns(2)
     with col1:
-        respProyecto = st.text_input("Responsable de proyecto", value="")
+        respProyecto = st.text_input("Responsable", value="")
         numSolicitud = st.text_input("Nº Solicitud", value="")
         tipoSolicitud = st.selectbox("Tipo", ["Interno", "Cliente"])
     with col2:
