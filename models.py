@@ -94,9 +94,23 @@ def build_ensayos_dict_from_df(df_sel: pd.DataFrame) -> dict:
     A partir de un df filtrado por Nº de solicitud, agrupa ensayos:
     - clave = ID ensayo + Nombre formulación
     - materias / % en lista
+    Ordena por fecha de ensayo y por ID de ensayo.
     """
+    df_work = df_sel.copy()
+
+    # Columna auxiliar para ordenar por fecha (admite formatos tipo 11/03/2025 ó 2025-03-11)
+    df_work["__fecha_orden"] = pd.to_datetime(
+        df_work["Fecha ensayo"], errors="coerce", dayfirst=True
+    )
+    df_work["__fecha_orden"] = df_work["__fecha_orden"].fillna(pd.Timestamp("1970-01-01"))
+
+    # Ordenar por fecha + ID + nombre formulación
+    df_work = df_work.sort_values(
+        ["__fecha_orden", "ID ensayo", "Nombre formulación"], ascending=[True, True, True]
+    )
+
     grupos = (
-        df_sel.groupby(
+        df_work.groupby(
             [
                 "ID ensayo",
                 "Nombre formulación",
@@ -105,6 +119,7 @@ def build_ensayos_dict_from_df(df_sel: pd.DataFrame) -> dict:
                 "Motivo / comentario",
             ],
             dropna=False,
+            sort=False,  # respetar el orden ya aplicado en df_work
         )
         .agg({"Materia prima": list, "% peso": list})
         .reset_index()
