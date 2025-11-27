@@ -27,6 +27,26 @@ def init_bbdd(session_state):
         session_state["bbdd"] = pd.DataFrame(columns=BBDD_COLUMNS)
 
 
+def normalize_columns(df: pd.DataFrame) -> pd.DataFrame:
+    """
+    Normaliza nombres de columnas:
+    - Elimina BOM (\ufeff) y espacios.
+    - Mapea cualquier columna que empiece por 'responsable' a 'Responsable'.
+    """
+    new_cols = []
+    for c in df.columns:
+        if isinstance(c, str):
+            col = c.replace("\ufeff", "").strip()
+            low = col.lower()
+            if low.startswith("responsable"):
+                col = "Responsable"
+        else:
+            col = c
+        new_cols.append(col)
+    df.columns = new_cols
+    return df
+
+
 def parse_receta_text(text: str):
     """
     Pega aquí bloque tipo:
