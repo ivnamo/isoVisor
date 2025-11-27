@@ -57,7 +57,7 @@ def render_visor_page():
 
     st.markdown("### 1. Datos de partida del diseño (F10-02 · 1)")
     with st.container(border=True):
-        st.write(f"**Responsable de proyecto:** {meta_row.get('Responsable', '')}")
+        st.write(f"**Responsable:** {meta_row.get('Responsable', '')}")
         st.write(
             f"**Nº Solicitud:** {meta_row.get('Nº Solicitud', '')} &nbsp;&nbsp; "
             f"**Tipo:** {meta_row.get('Tipo', '')}"
