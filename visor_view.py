@@ -48,7 +48,12 @@ def render_visor_page():
     # 4) Selector de Nº Solicitud
     st.markdown("### Seleccionar Nº de Solicitud")
     solicitudes = df_bbdd["Nº Solicitud"].fillna("(sin Nº)").unique().tolist()
-    solicitudes = sorted(solicitudes, key=lambda x: str(x))
+    def natural_sort_key(x):
+        try:
+            return (0, float(x))
+        except:
+            return (1, str(x))
+    solicitudes = sorted(solicitudes, key=natural_sort_key)
     solicitud_sel = st.selectbox("Nº Solicitud", solicitudes)
 
     df_sel = df_bbdd[df_bbdd["Nº Solicitud"].fillna("(sin Nº)") == solicitud_sel].copy()
