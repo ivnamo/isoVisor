@@ -6,12 +6,11 @@ from datetime import date
 from models import BBDD_COLUMNS, parse_receta_text, normalize_columns, VALIDACION_STD
 from utils_streamlit import df_to_csv_download
 
-
 def render_registro_page():
     st.subheader("📥 Opcional: cargar BBDD existente (CSV)")
 
     uploaded_bbdd = st.file_uploader(
-        "Sube un CSV previo (estructura F10-02) para continuar añadiendo ensayos",
+        "Sube un CSV previo para continuar añadiendo ensayos",
         type=["csv"],
         key="uploader_registro",
     )
@@ -23,14 +22,8 @@ def render_registro_page():
                 df_in = pd.read_csv(uploaded_bbdd, sep=None, engine="python")
                 df_in = normalize_columns(df_in)
                 missing = [c for c in BBDD_COLUMNS if c not in df_in.columns]
-                for c in missing:
-                    df_in[c] = ""
+                for c in missing: df_in[c] = ""
                 st.session_state["bbdd"] = df_in[BBDD_COLUMNS]
-
-    with col_info:
-        st.markdown(
-            "_Si no subes nada, se empieza con una BBDD vacía (en esta sesión)._"
-        )
 
     st.markdown("---")
     st.subheader("1. Datos de partida del diseño (F10-02 · 1)")
@@ -42,187 +35,111 @@ def render_registro_page():
         tipoSolicitud = st.selectbox("Tipo", ["Interno", "Cliente"])
     with col2:
         productoBase = st.text_input("Producto / línea", value="")
-        descripcionDiseno = st.text_area(
-            "Descripción de los datos de partida del diseño",
-            value="",
-            height=120,
-        )
+        descripcionDiseno = st.text_area("Descripción datos partida", value="", height=100)
 
     st.markdown("### 2. Ensayo / formulación (F10-02 · 2)")
     colE1, colE2, colE3, colE4 = st.columns(4)
-    with colE1:
-        idEnsayo = st.text_input("ID ensayo", value="")
-    with colE2:
-        nombreEnsayo = st.text_input("Nombre formulación", value="")
-    with colE3:
-        fechaEnsayo = st.date_input("Fecha ensayo", value=date.today())
-    with colE4:
-        resultadoEnsayo = st.selectbox("Resultado", ["NOK", "OK"])
+    with colE1: idEnsayo = st.text_input("ID ensayo", value="")
+    with colE2: nombreEnsayo = st.text_input("Nombre formulación", value="")
+    with colE3: fechaEnsayo = st.date_input("Fecha ensayo", value=date.today())
+    with colE4: resultadoEnsayo = st.selectbox("Resultado", ["NOK", "OK"])
 
-    motivoModificacion = st.text_area(
-        "Motivo / comentario (NOK, observaciones)",
-        value="",
-        height=120,
-    )
+    motivoModificacion = st.text_area("Motivo / comentario", value="", height=100)
 
     st.markdown("#### Receta del ensayo (pegar desde Excel)")
-    receta_text = st.text_area(
-        "Cada línea: materia prima + % peso (tabulado, punto y coma o espacio)",
-        value="",
-        height=120,
-        key="receta_textarea",
-    )
+    receta_text = st.text_area("Materia prima + % peso", height=100, key="receta_textarea")
 
-    st.markdown("### 3. Verificación (F10-02 · 3)")
+    st.markdown("### 3. Verificación Básica")
     colV1, colV2, colV3 = st.columns(3)
-    with colV1:
-        productoVerificacion = st.text_input("Producto final", value="")
-    with colV2:
-        formulaOk = st.text_input("Fórmula OK (ref. ensayo / versión)", value="")
-    with colV3:
-        riquezas = st.text_input("Riquezas (garantías, NPK, micro...)", value="")
+    with colV1: productoVerificacion = st.text_input("Producto final", value="")
+    with colV2: formulaOk = st.text_input("Fórmula OK", value="")
+    with colV3: riquezas = st.text_input("Riquezas (Resumen)", value="")
 
-    # ==============================================================================
-    # SECCIÓN 4: ESPECIFICACIÓN FINAL Y VALIDACIÓN (F10-03)
-    # ==============================================================================
+    # --- AQUÍ ESTÁ LO NUEVO QUE NO VEÍAS ANTES ---
     st.markdown("---")
     st.subheader("4. Especificación Final y Validación (F10-03)")
 
-    with st.expander("📝 1. Especificaciones (Descripción, Físico y Químico)", expanded=True):
-        st.markdown("**1. Descripción**")
-        spec_desc = st.text_area(
-            "Descripción (Marketing/Técnica)",
-            placeholder="Ej: ARCHER ECLIPSE es una solución nutricional...",
-            height=100
-        )
+    with st.expander("📝 1. Especificaciones (F10-03)", expanded=True):
+        st.markdown("**Descripción y Físico**")
+        spec_desc = st.text_area("Descripción Larga (Marketing)", height=80)
         
-        st.markdown("**2. Características Físicas**")
         c_f1, c_f2, c_f3, c_f4 = st.columns(4)
-        with c_f1:
-            spec_aspecto = st.selectbox("Aspecto", ["Líquido", "Sólido", "Gel", "Suspensión"], index=0)
-        with c_f2:
-            spec_color = st.text_input("Color", "Blanquecino")
-        with c_f3:
-            spec_densidad = st.text_input("Densidad (g/cc)", "1,7")
-        with c_f4:
-            spec_ph = st.text_input("pH", "8 - 9")
+        with c_f1: spec_aspecto = st.selectbox("Aspecto", ["Líquido", "Sólido", "Gel", "Suspensión"])
+        with c_f2: spec_color = st.text_input("Color", "Blanquecino")
+        with c_f3: spec_densidad = st.text_input("Densidad (g/cc)", "1,7")
+        with c_f4: spec_ph = st.text_input("pH", "8 - 9")
 
-        st.markdown("**3. Características Químicas** (Pegar lista)")
-        spec_quimica = st.text_area(
-            "Riquezas y porcentajes (copiar/pegar)",
-            placeholder="Oxido de calcio (CaO)... 33%\nZinc (Zn)... 1,5%",
-            height=100
-        )
+        st.markdown("**Características Químicas (Lista detallada)**")
+        spec_quimica = st.text_area("Pegar lista de riquezas", height=80)
 
     st.markdown("**2. Tabla de Validación**")
-    st.info("Marca las casillas de validación (OK). La tabla se guardará completa con el ensayo.")
-
-    # Inicializar tabla de validación temporal si no existe
     if "df_val_temp" not in st.session_state:
         st.session_state["df_val_temp"] = pd.DataFrame(VALIDACION_STD)
 
-    # Editor interactivo
     edited_val_df = st.data_editor(
         st.session_state["df_val_temp"],
         column_config={
-            "Validar": st.column_config.CheckboxColumn(
-                "¿OK?",
-                default=False,
-            ),
-            "Comentarios": st.column_config.TextColumn(
-                "Observaciones",
-                width="large"
-            )
+            "Validar": st.column_config.CheckboxColumn("¿OK?", default=False),
+            "Comentarios": st.column_config.TextColumn("Observaciones", width="large")
         },
-        disabled=["Área", "Aspecto"],  # Bloquear columnas fijas
+        disabled=["Área", "Aspecto"],
         hide_index=True,
-        use_container_width=True,
-        key="editor_validacion"
+        use_container_width=True
     )
     
-    fecha_val = st.date_input("Fecha Cierre Validación", value=date.today())
+    fecha_val = st.date_input("Fecha Validación", value=date.today())
 
     st.markdown("---")
 
-    # ==============================================================================
-    # BOTÓN AÑADIR
-    # ==============================================================================
-
-    if st.button(
-        "➕ Añadir ensayo al registro F10-02/03",
-        type="primary",
-        use_container_width=True,
-    ):
+    if st.button("➕ Añadir ensayo (Guardar todo)", type="primary", use_container_width=True):
         if not receta_text.strip():
-            st.error("Primero pega la receta del ensayo.")
+            st.error("Falta la receta.")
         elif not idEnsayo.strip():
-            st.error("Rellena el ID de ensayo.")
+            st.error("Falta ID ensayo.")
         else:
             rows = parse_receta_text(receta_text)
             if not rows:
-                st.error(
-                    "No se han encontrado líneas válidas (materia prima + %). Revisa el texto pegado."
-                )
+                st.error("Error en formato receta.")
             else:
                 new_records = []
-                
-                # Serializamos la tabla de validación a JSON para guardarla en una sola celda
+                # Convertir tabla validación a texto para guardar
                 val_json = edited_val_df.to_json(orient="records", force_ascii=False)
                 fecha_val_str = fecha_val.strftime("%Y-%m-%d")
 
                 for r in rows:
-                    new_records.append(
-                        {
-                            "Responsable": respProyecto.strip(),
-                            "Nº Solicitud": numSolicitud.strip(),
-                            "Tipo": tipoSolicitud,
-                            "Producto base": productoBase.strip(),
-                            "Descripción diseño": descripcionDiseno.strip(),
-                            "ID ensayo": idEnsayo.strip(),
-                            "Nombre formulación": nombreEnsayo.strip(),
-                            "Fecha ensayo": fechaEnsayo.strftime("%Y-%m-%d"),
-                            "Resultado": resultadoEnsayo,
-                            "Materia prima": r["materia"],
-                            "% peso": r["pct"],
-                            "Motivo / comentario": motivoModificacion.strip(),
-                            "Producto final": productoVerificacion.strip(),
-                            "Fórmula OK": formulaOk.strip(),
-                            "Riquezas": riquezas.strip(),
-                            
-                            # --- NUEVOS CAMPOS ---
-                            "Spec_Descripcion": spec_desc,
-                            "Spec_Aspecto": spec_aspecto,
-                            "Spec_Color": spec_color,
-                            "Spec_Densidad": spec_densidad,
-                            "Spec_pH": spec_ph,
-                            "Spec_Quimica": spec_quimica,
-                            "Validacion_JSON": val_json,
-                            "Fecha_Validacion": fecha_val_str
-                        }
-                    )
+                    new_records.append({
+                        "Responsable": respProyecto.strip(),
+                        "Nº Solicitud": numSolicitud.strip(),
+                        "Tipo": tipoSolicitud,
+                        "Producto base": productoBase.strip(),
+                        "Descripción diseño": descripcionDiseno.strip(),
+                        "ID ensayo": idEnsayo.strip(),
+                        "Nombre formulación": nombreEnsayo.strip(),
+                        "Fecha ensayo": fechaEnsayo.strftime("%Y-%m-%d"),
+                        "Resultado": resultadoEnsayo,
+                        "Materia prima": r["materia"],
+                        "% peso": r["pct"],
+                        "Motivo / comentario": motivoModificacion.strip(),
+                        "Producto final": productoVerificacion.strip(),
+                        "Fórmula OK": formulaOk.strip(),
+                        "Riquezas": riquezas.strip(),
+                        # CAMPOS NUEVOS
+                        "Spec_Descripcion": spec_desc,
+                        "Spec_Aspecto": spec_aspecto,
+                        "Spec_Color": spec_color,
+                        "Spec_Densidad": spec_densidad,
+                        "Spec_pH": spec_ph,
+                        "Spec_Quimica": spec_quimica,
+                        "Validacion_JSON": val_json,
+                        "Fecha_Validacion": fecha_val_str
+                    })
 
                 df_new = pd.DataFrame(new_records, columns=BBDD_COLUMNS)
-                st.session_state["bbdd"] = pd.concat(
-                    [st.session_state["bbdd"], df_new], ignore_index=True
-                )
-                st.success(
-                    f"Añadidas {len(new_records)} líneas para el ensayo {idEnsayo.strip()} con datos F10-03."
-                )
+                st.session_state["bbdd"] = pd.concat([st.session_state["bbdd"], df_new], ignore_index=True)
+                st.success(f"Guardado ensayo {idEnsayo} con datos F10-03.")
 
-    st.markdown("### Tabla BBDD F10-02 (toda la sesión)")
-    st.dataframe(st.session_state["bbdd"], use_container_width=True, height=300)
+    st.markdown("### Tabla BBDD (Sesión)")
+    st.dataframe(st.session_state["bbdd"], use_container_width=True, height=200)
 
-    colB1, colB2 = st.columns(2)
-    with colB1:
-        if st.button(
-            "🗑️ Borrar TODA la BBDD de esta sesión", use_container_width=True
-        ):
-            st.session_state["bbdd"] = pd.DataFrame(columns=BBDD_COLUMNS)
-            st.warning("BBDD vaciada en esta sesión.")
-    with colB2:
-        if len(st.session_state["bbdd"]) > 0:
-            df_to_csv_download(
-                st.session_state["bbdd"],
-                "F10_02_BD_ensayos.csv",
-                "📥 Descargar BBDD F10-02 (CSV)",
-            )
+    if len(st.session_state["bbdd"]) > 0:
+        df_to_csv_download(st.session_state["bbdd"], "BBDD_Sesion.csv", "📥 Descargar BBDD Completa (CSV)")
