@@ -1,8 +1,9 @@
 import streamlit as st
 import pandas as pd
+import json
 from datetime import date
 
-from models import BBDD_COLUMNS, parse_receta_text, normalize_columns
+from models import BBDD_COLUMNS, parse_receta_text, normalize_columns, VALIDACION_STD
 from utils_streamlit import df_to_csv_download
 
 
@@ -81,8 +82,74 @@ def render_registro_page():
     with colV3:
         riquezas = st.text_input("Riquezas (garantías, NPK, micro...)", value="")
 
+    # ==============================================================================
+    # SECCIÓN 4: ESPECIFICACIÓN FINAL Y VALIDACIÓN (F10-03)
+    # ==============================================================================
+    st.markdown("---")
+    st.subheader("4. Especificación Final y Validación (F10-03)")
+
+    with st.expander("📝 1. Especificaciones (Descripción, Físico y Químico)", expanded=True):
+        st.markdown("**1. Descripción**")
+        spec_desc = st.text_area(
+            "Descripción (Marketing/Técnica)",
+            placeholder="Ej: ARCHER ECLIPSE es una solución nutricional...",
+            height=100
+        )
+        
+        st.markdown("**2. Características Físicas**")
+        c_f1, c_f2, c_f3, c_f4 = st.columns(4)
+        with c_f1:
+            spec_aspecto = st.selectbox("Aspecto", ["Líquido", "Sólido", "Gel", "Suspensión"], index=0)
+        with c_f2:
+            spec_color = st.text_input("Color", "Blanquecino")
+        with c_f3:
+            spec_densidad = st.text_input("Densidad (g/cc)", "1,7")
+        with c_f4:
+            spec_ph = st.text_input("pH", "8 - 9")
+
+        st.markdown("**3. Características Químicas** (Pegar lista)")
+        spec_quimica = st.text_area(
+            "Riquezas y porcentajes (copiar/pegar)",
+            placeholder="Oxido de calcio (CaO)... 33%\nZinc (Zn)... 1,5%",
+            height=100
+        )
+
+    st.markdown("**2. Tabla de Validación**")
+    st.info("Marca las casillas de validación (OK). La tabla se guardará completa con el ensayo.")
+
+    # Inicializar tabla de validación temporal si no existe
+    if "df_val_temp" not in st.session_state:
+        st.session_state["df_val_temp"] = pd.DataFrame(VALIDACION_STD)
+
+    # Editor interactivo
+    edited_val_df = st.data_editor(
+        st.session_state["df_val_temp"],
+        column_config={
+            "Validar": st.column_config.CheckboxColumn(
+                "¿OK?",
+                default=False,
+            ),
+            "Comentarios": st.column_config.TextColumn(
+                "Observaciones",
+                width="large"
+            )
+        },
+        disabled=["Área", "Aspecto"],  # Bloquear columnas fijas
+        hide_index=True,
+        use_container_width=True,
+        key="editor_validacion"
+    )
+    
+    fecha_val = st.date_input("Fecha Cierre Validación", value=date.today())
+
+    st.markdown("---")
+
+    # ==============================================================================
+    # BOTÓN AÑADIR
+    # ==============================================================================
+
     if st.button(
-        "➕ Añadir ensayo al registro F10-02",
+        "➕ Añadir ensayo al registro F10-02/03",
         type="primary",
         use_container_width=True,
     ):
@@ -98,6 +165,11 @@ def render_registro_page():
                 )
             else:
                 new_records = []
+                
+                # Serializamos la tabla de validación a JSON para guardarla en una sola celda
+                val_json = edited_val_df.to_json(orient="records", force_ascii=False)
+                fecha_val_str = fecha_val.strftime("%Y-%m-%d")
+
                 for r in rows:
                     new_records.append(
                         {
@@ -116,6 +188,16 @@ def render_registro_page():
                             "Producto final": productoVerificacion.strip(),
                             "Fórmula OK": formulaOk.strip(),
                             "Riquezas": riquezas.strip(),
+                            
+                            # --- NUEVOS CAMPOS ---
+                            "Spec_Descripcion": spec_desc,
+                            "Spec_Aspecto": spec_aspecto,
+                            "Spec_Color": spec_color,
+                            "Spec_Densidad": spec_densidad,
+                            "Spec_pH": spec_ph,
+                            "Spec_Quimica": spec_quimica,
+                            "Validacion_JSON": val_json,
+                            "Fecha_Validacion": fecha_val_str
                         }
                     )
 
@@ -124,7 +206,7 @@ def render_registro_page():
                     [st.session_state["bbdd"], df_new], ignore_index=True
                 )
                 st.success(
-                    f"Añadidas {len(new_records)} líneas para el ensayo {idEnsayo.strip()}."
+                    f"Añadidas {len(new_records)} líneas para el ensayo {idEnsayo.strip()} con datos F10-03."
                 )
 
     st.markdown("### Tabla BBDD F10-02 (toda la sesión)")
