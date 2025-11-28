@@ -36,15 +36,15 @@ BBDD_COLUMNS = [
 
 # Tabla estándar para mostrar en el editor
 VALIDACION_STD = [
-    {"Área": "I+D+i", "Aspecto": "Fórmula - Funcionalidad", "Validar": False, "Comentarios": ""},
-    {"Área": "Técnico", "Aspecto": "Validación agronómica", "Validar": False, "Comentarios": ""},
-    {"Área": "Registros", "Aspecto": "Cumplimiento legislativo", "Validar": False, "Comentarios": ""},
-    {"Área": "Producción", "Aspecto": "Viabilidad productiva", "Validar": False, "Comentarios": ""},
-    {"Área": "Calidad", "Aspecto": "Cumplimiento legislativo", "Validar": False, "Comentarios": ""},
-    {"Área": "Calidad", "Aspecto": "Composición declarada", "Validar": False, "Comentarios": ""},
-    {"Área": "Calidad", "Aspecto": "Estabilidad química", "Validar": False, "Comentarios": ""},
-    {"Área": "Marketing/Dir", "Aspecto": "Precio Tarifa", "Validar": False, "Comentarios": ""},
-    {"Área": "Marketing/Dir", "Aspecto": "Lanzamiento", "Validar": False, "Comentarios": ""},
+    {"Área": "I+D+i", "Aspecto": "Fórmula - Funcionalidad", "Validar": True, "Comentarios": ""},
+    {"Área": "Técnico", "Aspecto": "Validación agronómica", "Validar": True, "Comentarios": ""},
+    {"Área": "Registros", "Aspecto": "Cumplimiento legislativo", "Validar": True, "Comentarios": ""},
+    {"Área": "Producción", "Aspecto": "Viabilidad productiva", "Validar": True, "Comentarios": ""},
+    {"Área": "Calidad", "Aspecto": "Cumplimiento legislativo", "Validar": True, "Comentarios": ""},
+    {"Área": "Calidad", "Aspecto": "Composición declarada", "Validar": True, "Comentarios": ""},
+    {"Área": "Calidad", "Aspecto": "Estabilidad química", "Validar": True, "Comentarios": ""},
+    {"Área": "Marketing/Dir", "Aspecto": "Precio Tarifa", "Validar": True, "Comentarios": ""},
+    {"Área": "Marketing/Dir", "Aspecto": "Lanzamiento", "Validar": True, "Comentarios": ""},
 ]
 
 # ==============================================================================
