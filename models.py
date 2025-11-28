@@ -2,6 +2,10 @@ from datetime import date
 import pandas as pd
 import io
 
+# ==============================================================================
+# CONFIGURACIÓN DE LA BBDD
+# ==============================================================================
+
 BBDD_COLUMNS = [
     "Responsable",
     "Nº Solicitud",
@@ -18,8 +22,33 @@ BBDD_COLUMNS = [
     "Producto final",
     "Fórmula OK",
     "Riquezas",
+    # --- NUEVOS CAMPOS F10-03 (Especificación y Validación) ---
+    "Spec_Descripcion",
+    "Spec_Aspecto",
+    "Spec_Color",
+    "Spec_Densidad",
+    "Spec_pH",
+    "Spec_Quimica",
+    "Validacion_JSON",  # Aquí guardaremos la tabla de validación completa
+    "Fecha_Validacion",
 ]
 
+# Estructura estándar para la tabla de validación (F10-03)
+VALIDACION_STD = [
+    {"Área": "I+D+i", "Aspecto": "Fórmula - Funcionalidad", "Validar": False, "Comentarios": ""},
+    {"Área": "Técnico", "Aspecto": "Validación agronómica", "Validar": False, "Comentarios": ""},
+    {"Área": "Registros", "Aspecto": "Cumplimiento legislativo", "Validar": False, "Comentarios": ""},
+    {"Área": "Producción", "Aspecto": "Viabilidad productiva", "Validar": False, "Comentarios": ""},
+    {"Área": "Calidad", "Aspecto": "Cumplimiento legislativo", "Validar": False, "Comentarios": ""},
+    {"Área": "Calidad", "Aspecto": "Composición declarada", "Validar": False, "Comentarios": ""},
+    {"Área": "Calidad", "Aspecto": "Estabilidad química", "Validar": False, "Comentarios": ""},
+    {"Área": "Marketing/Dir", "Aspecto": "Precio Tarifa", "Validar": False, "Comentarios": ""},
+    {"Área": "Marketing/Dir", "Aspecto": "Lanzamiento", "Validar": False, "Comentarios": ""},
+]
+
+# ==============================================================================
+# FUNCIONES BBDD Y PARSING
+# ==============================================================================
 
 def init_bbdd(session_state):
     """Inicializa la BBDD en sesión si no existe."""
@@ -302,4 +331,3 @@ def build_informe_iso_excel_all(df_bbdd: pd.DataFrame) -> bytes:
 
     output.seek(0)
     return output.getvalue()
-
