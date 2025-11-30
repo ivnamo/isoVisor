@@ -18,7 +18,7 @@ def render_registro_page():
     col_load, col_info = st.columns([1, 2])
     with col_load:
         if uploaded_bbdd is not None:
-            if st.button("Cargar CSV en BBDD actual", use_container_width=True):
+            if st.button("Cargar CSV en BBDD actual", width="stretch"):
                 df_in = pd.read_csv(uploaded_bbdd, sep=None, engine="python")
                 df_in = normalize_columns(df_in)
                 missing = [c for c in BBDD_COLUMNS if c not in df_in.columns]
@@ -84,7 +84,7 @@ def render_registro_page():
         },
         disabled=["Área", "Aspecto"],
         hide_index=True,
-        use_container_width=True
+        width="stretch"
     )
     
     fecha_val = st.date_input("Fecha Validación", value=date.today())
