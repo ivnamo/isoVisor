@@ -91,7 +91,7 @@ def render_registro_page():
 
     st.markdown("---")
 
-    if st.button("➕ Añadir ensayo (Guardar todo)", type="primary", use_container_width=True):
+    if st.button("➕ Añadir ensayo (Guardar todo)", type="primary", width="stretch"):
         if not receta_text.strip():
             st.error("Falta la receta.")
         elif not idEnsayo.strip():
@@ -139,7 +139,7 @@ def render_registro_page():
                 st.success(f"Guardado ensayo {idEnsayo} con datos F10-03.")
 
     st.markdown("### Tabla BBDD (Sesión)")
-    st.dataframe(st.session_state["bbdd"], use_container_width=True, height=200)
+    st.dataframe(st.session_state["bbdd"], width="stretch", height=200)
 
     if len(st.session_state["bbdd"]) > 0:
         df_to_csv_download(st.session_state["bbdd"], "BBDD_Sesion.csv", "📥 Descargar BBDD Completa (CSV)")
