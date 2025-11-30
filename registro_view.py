@@ -24,6 +24,7 @@ def render_registro_page():
                 missing = [c for c in BBDD_COLUMNS if c not in df_in.columns]
                 for c in missing: df_in[c] = ""
                 st.session_state["bbdd"] = df_in[BBDD_COLUMNS]
+                st.success(f"BBDD cargada correctamente ({len(df_in)} filas).")
 
     st.markdown("---")
     st.subheader("1. Datos de partida del diseño (F10-02 · 1)")
