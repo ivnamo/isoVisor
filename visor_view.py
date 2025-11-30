@@ -19,11 +19,16 @@ def render_visor_page():
         key="uploader_view",
     )
 
-    # 1) Cargar BBDD: CSV subido o BBDD en sesión
     if uploaded_view is not None:
-        df_bbdd = pd.read_csv(uploaded_view, sep=None, engine="python")
+        try:
+            df_bbdd = pd.read_csv(uploaded_view, sep=None, engine="python")
+            st.success("✅ CSV cargado correctamente.")
+        except Exception as e:
+            st.error(f"❌ Error al cargar el CSV: {e}")
+            return
     else:
         df_bbdd = st.session_state.get("bbdd", pd.DataFrame(columns=BBDD_COLUMNS))
+
 
     # 2) Normalizar nombres de columnas (Responsable, BOM, espacios, etc.)
     df_bbdd = normalize_columns(df_bbdd)
